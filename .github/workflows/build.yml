@@ -7,7 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: unzip -q TVLibre.zip
+      - name: Preparar proyecto
+        run: |
+          if [ -f TVLibre.zip ]; then unzip -q TVLibre.zip; fi
+          FILE=$(find . -name settings.gradle.kts -not -path "./.git/*" | head -n1)
+          if [ -z "$FILE" ]; then echo "No se encontró el proyecto (settings.gradle.kts)"; exit 1; fi
+          echo "PROJECT_DIR=$(dirname "$FILE")" >> "$GITHUB_ENV"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -15,8 +20,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
-      - run: gradle -p TVLibre assembleDebug
+      - run: gradle -p "$PROJECT_DIR" assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: TVLibre-APK
-          path: TVLibre/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
